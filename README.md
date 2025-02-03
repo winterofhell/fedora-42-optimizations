@@ -2,7 +2,7 @@
 
 Fedora 41 Optimizations for Gaming and Performance
 
-> Tested on Fedora 41‑beta -> Fedora 41 (14.10.2024-01.02.2025) using the Fedora Minimal ISO and the Sway WM spin (instead of GNOME).
+> Tested on Fedora 41‑beta -> Fedora 41 (14.10.2024-01.02.2025) using the Fedora Minimal ISO and the Sway WM spin (instead of GNOME) AND on Gnome DE on Nvidia system.
 System: Ryzen 5 5500U, 8 GB DDR4 (upgrade recommended for me xD), RX550X discrete / RX Vega 7 iGPU, Nvme disk and second pc Ryzen 5 5600, 16Gb DDR4, Gtx 1060, Sata SSD disk.
 
 
