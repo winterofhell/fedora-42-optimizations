@@ -81,7 +81,7 @@ sudo dmesg | grep -o "lpj=[0-9]*"
 
 sudo grub2-mkconfig -o /boot/grub2/grub.cfg
 
-Explanation: These parameters disable some mitigation and energy‑saving features (e.g. deep C‑states) to boost performance and reduce latency.
+Explanation: These parameters disable some mitigation and energy‑saving features (e.g. deep C‑states for Intel cpu !! ) to boost performance and reduce latency.
 
 
 
@@ -103,8 +103,7 @@ sudo fstrim -v /
 (For AMD GPU Users) Environment Variables:
 Open /etc/environment and add:
 
-RADV_PERFTEST=sam
-__GL_THREADED_OPTIMIZATIONS=1
+RADV_PERFTEST=gpl
 mesa_glthread=true
 
 CPU Scaling Driver Settings:
@@ -187,7 +186,7 @@ sudo dnf upgrade --refresh
 
 Замена ядра
 
-Кэшос‑ядро:
+CachyOs-ядро:
 Если ваш CPU поддерживает x86_64_v3, добавьте репозиторий Cachyos COPR и установите Cachyos‑kernel.
 [Инструкция по установке Cachyos‑kernel](https://copr.fedorainfracloud.org/coprs/bieszczaders/kernel-cachyos/)
 
@@ -202,7 +201,7 @@ UKSMD аддоны:
 Оптимизация служб и процессов
 
 1. Ananicy‑cpp:
-Склонируйте, соберите и установите [Ananicy‑cpp](https://gitlab.com/ananicy-cpp/ananicy-cpp) – утилиту для управления приоритетами задач и снижения задержек.
+Клонирвуйте, забильдите и установите [Ananicy‑cpp](https://gitlab.com/ananicy-cpp/ananicy-cpp) – утилиту для управления приоритетами задач и снижения задержек.
 
 
 2. Отключение ненужных служб:
@@ -231,7 +230,7 @@ sudo dmesg | grep -o "lpj=[0-9]*"
 
 sudo grub2-mkconfig -o /boot/grub2/grub.cfg
 
-Пояснение: Эти параметры отключают некоторые функции энергосбережения и защиты (например, глубокие C‑state), чтобы увеличить производительность и снизить задержки.
+Пояснение: Эти параметры отключают некоторые функции энергосбережения и защиты (например, глубокие C‑state для Интел процессоров !!), чтобы увеличить производительность и снизить задержки.
 
 
 
@@ -253,8 +252,7 @@ sudo fstrim -v /
 (Для AMD GPU) Переменные окружения:
 Откройте /etc/environment и добавьте:
 
-RADV_PERFTEST=sam
-__GL_THREADED_OPTIMIZATIONS=1
+RADV_PERFTEST=gpl
 mesa_glthread=true
 
 Настройка драйверов масштабирования для CPU:
