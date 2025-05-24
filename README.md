@@ -97,9 +97,12 @@ Explanation: These parameters disable some mitigation and energy‑saving featur
 
 Additional System Tweaks
 
+
 Enable systemd‑oomd:
 
 sudo systemctl enable --now systemd-oomd
+
+
 
 SSD TRIM:
 Enable the fstrim timer and run TRIM manually:
@@ -107,40 +110,75 @@ Enable the fstrim timer and run TRIM manually:
 sudo systemctl enable fstrim.timer
 sudo fstrim -v /
 
+
+
 (For AMD GPU Users) Environment Variables:
 Open /etc/environment and add:
 
 RADV_PERFTEST=gpl
 mesa_glthread=true
 
+
+
 CPU Scaling Driver Settings:
+
+
 For AMD:
 
 echo "active" | sudo tee /sys/devices/system/cpu/amd_pstate/status
 
+
 For Intel:
 
 echo "passive" | sudo tee /sys/devices/system/cpu/intel_pstate/status
+
+
 
 Increase Open File Limit:
 In /etc/security/limits.conf, add (replace yourusername with your user name):
 
 yourusername hard nofile 1048576
 
+
+
 (Optional for Intel Users) Disable iqrBalance:
 If you’re experiencing performance issues with the iGPU, try disabling the iqrBalance service.
+
+Check status
+sudo systemctl status irqbalance
+
+Disable
+sudo systemctl disable --now irqbalance
+
+
 
 Install Gamemode:
 
 sudo dnf install gamemode
 
-Launch games using gamemoderun to benefit from runtime performance adjustments.
+Launch games using gamemoderun command (in Steam and etc) to benefit from runtime performance adjustments.
+
+
 
 Regular Cache Cleaning:
 Use tools like Stacer (or CLI commands) to clear DNF and package caches periodically.
 
+sudo dnf clean all
+
+Optionally, clean journal logs (e.g., keep last 7 days)
+
+sudo journalctl --vacuum-time=7d
+
+
+
 For Windows Executables:
-Consider using PortProton for launching .exe files with excellent compatibility.
+Consider using PortProton for launching .exe files with excellent compatibility and the best performance (as for me, its more easy to setup and play using PortProton)
+
+sudo dnf copr enable boria138/portproton
+
+sudo dnf install portproton
+
+
 
 Lightweight WM Recommendations:
 If you’re using GNOME / KDE, lighter window managers like Sway / i3 / Hyprland and etc can reduce idle resource consumption.
@@ -151,12 +189,15 @@ If you’re using GNOME / KDE, lighter window managers like Sway / i3 / Hyprland
 
 Conclusion
 
+
 Fedora is well optimized out of the box with up-to-date packages and a stable system. Applying the above tweaks—disabling unnecessary services, fine‑tuning kernel parameters, and using optimized components (Cachyos kernel, Ananicy‑cpp, Gamemode, etc.)—can further free resources and reduce latency in games and everyday use.
 
 
 ---
 
+
 Russian Translation
+
 
 ---
 
