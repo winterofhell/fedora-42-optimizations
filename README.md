@@ -1,13 +1,9 @@
 ---
-
-Fedora 42 Optimizations for Gaming and Performance
-
-> Tested on Fedora 42 (14.10.2024-24.05.2025) using the Fedora Minimal ISO and the Sway WM spin (instead of GNOME) AND on Gnome DE on Nvidia system.
-System: Ryzen 5 5500U, 20 GB DDR4, RX550X discrete / RX Vega 7 iGPU, NVME disk AND second pc - Ryzen 5 5600, 16Gb DDR4, Gtx 1060, Sata SSD disk.
-
-
-
-
+title: Fedora 42 Optimizations for Gaming and Performance
+testing_notes: >
+  Tested on Fedora 42 (14.10.2024-24.05.2025) using the Fedora Minimal ISO and the Sway WM spin (instead of GNOME) AND on Gnome DE on Nvidia system.
+system_specs: >
+  Ryzen 5 5500U, 20 GB DDR4, RX550X discrete / RX Vega 7 iGPU, NVME disk AND second pc - Ryzen 5 5600, 16Gb DDR4, Gtx 1060, Sata SSD disk.
 ---
 
 Preparation
