@@ -6,9 +6,10 @@
 
 **Testing Environment:**
 
-- **Period:** October 14, 2024 - August 10, 2025
+- **Period:** October 14, 2024 - August 11, 2025
 - **Distribution:** Fedora 42 (Minimal ISO + Sway WM | Second pc: Fedora GNOME Edition)
 - **Additional Testing:** GNOME DE on NVIDIA system and AMD System
+- **This may also work on any other distro, but i cannot guarantee that all these tweaks will work on any distro / or your system. It is always necessary to test everything. :)**
 
 **Hardware Configurations(tested on):**
 
@@ -22,7 +23,7 @@
 
 ### 1. Minimal Installation
 
-For optimal performance, always start with the **Fedora Minimal ISO**. This approach eliminates unnecessary packages and services that can impact system resources.
+For optimal performance, always start with the **Fedora Minimal ISO**. This approach eliminates unnecessary packages and services that can impact system resources. Btw it is not necessary to do this.
 
 ### 2. Enable RPM Fusion Repositories
 
@@ -37,7 +38,7 @@ sudo dnf install https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfre
 
 ### 3. SELinux Configuration (Optional)
 
-⚠️ **Security Warning:** Disabling SELinux reduces system security but also makes ur system a little faster. Only proceed if you understand the implications.
+⚠️ **Security Warning:** Disabling SELinux reduces system security but also makes ur system a little faster. Only proceed if you understand the implications. (Personally, I don't care about SELinux and i always disable it.)
 
 **Temporary disable (until reboot):**
 
@@ -69,6 +70,15 @@ sudo dnf upgrade --refresh
 The CachyOS kernel provides significant performance improvements for gaming and general system responsiveness.
 
 **Prerequisites:** CPU must support x86_64_v3 instruction set !!
+
+```bash
+# Checking for the cpu support
+Check support by the following the command
+
+/lib64/ld-linux-x86-64.so.2 --help | grep "(supported, searched)"
+
+# If it does not detect x86_64_v3 support do NOT install this kernel. If it detects only x86_64_v2, you can use the LTS kernel.
+```
 
 ```bash
 # Add CachyOS COPR repository
@@ -269,7 +279,7 @@ gamemoded -t
 
 ### Windows Games Compatibility
 
-**PortProton** offers excellent compatibility for Windows executables:
+**PortProton** offers excellent compatibility for Windows executables (i use portproton instead of Lutris / Bottles and this is my fav proton executor app!):
 
 ```bash
 sudo dnf copr enable boria138/portproton
@@ -343,11 +353,11 @@ echo "✅ Maintenance complete!"
 
 ### Lightweight Alternatives
 
-For maximum performance, consider these lightweight desktop environments:
+For maximum performance, consider these lightweight desktop environments (if installing using Minimal iso):
 
-- **Sway** - Wayland-based tiling compositor
-- **i3** - X11 tiling window manager
-- **Hyprland** - Modern Wayland compositor with animations
+- **Sway** - Wayland-based tiling compositor (i have 700mb on idle with it)
+- **i3** - X11 tiling window manager (600mb on idle)
+- **Hyprland** - Modern Wayland compositor with animations (900mb on idle)
 - **XFCE** - Lightweight traditional desktop
 - **LXQt** - Qt-based lightweight desktop
 
@@ -373,12 +383,15 @@ This means better integration, support, and optimization out of the box.
 **Install Power Optimization Tools:**
 ```bash
 sudo dnf install powertop tlp tlp-rdw
+
 sudo systemctl enable --now tlp
-```
 
 # Configure TLP for gaming/performance mode
+
 sudo nano /etc/tlp.conf
+
 # Set: TLP_DEFAULT_MODE=performance (when plugged in)
+```
 
 ### Advanced Memory Management
 
@@ -391,7 +404,7 @@ echo 'vm.swappiness=10' | sudo tee -a /etc/sysctl.conf
 echo 'vm.vfs_cache_pressure=50' | sudo tee -a /etc/sysctl.conf
 ```
 
-**4. Container/Flatpak Gaming Section**
+**Container/Flatpak Gaming Section**
 
 
 ### Container Gaming Optimization
@@ -424,6 +437,9 @@ gsettings set org.gnome.shell.overrides workspaces-only-on-primary false
 -----
 
 ## 🎮 NVIDIA Graphics Optimization for Fedora 42 (Wayland)
+
+<details>
+<summary>NVIDIA optimization, drivers installation, tools and more</summary>
 
 > **Comprehensive optimization guide for NVIDIA GPUs on Fedora 42 with Wayland display server**
 
@@ -990,6 +1006,10 @@ EOF
 
 *💡 **Pro Tip:** Wayland offers hardware acceleration and generally better performance than traditional X11, making it the optimal choice for modern NVIDIA gaming setups on Fedora 42. Always verify changes incrementally and monitor performance to ensure optimal configuration.*
 
+</details>
+
+-----
+
 ## 🔍 Monitoring & Verification
 
 ### Performance Monitoring Tools
@@ -1063,7 +1083,7 @@ Based on testing, users can expect:
 
 -----
 
-## 🌍 Русская версия (Russian Translation)
+## 🌍 Русская версия | НЕ все переведено (Russian Translation)
 
 <details>
 <summary>Нажмите для просмотра русской версии</summary>
@@ -1074,7 +1094,7 @@ Based on testing, users can expect:
 
 **Среда тестирования:**
 
-- **Период:** 14 октября 2024 - 10 августа 2025
+- **Период:** 14 октября 2024 - 11 августа 2025
 - **Дистрибутив:** Fedora 42 (Минимальный ISO + Sway WM / 2 система на Гноме)
 - **Дополнительное тестирование:** GNOME DE на системе с NVIDIA
 
