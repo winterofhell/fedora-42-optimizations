@@ -351,6 +351,61 @@ For maximum performance, consider these lightweight desktop environments:
 - **XFCE** - Lightweight traditional desktop
 - **LXQt** - Qt-based lightweight desktop
 
+**KDE Plasma Edition (NEW in Fedora 42):**
+KDE Plasma is now an official Fedora edition alongside Workstation (GNOME). 
+This means better integration, support, and optimization out of the box.
+
+### Fedora 42 Specific Enhancements
+
+**What's New for Performance:**
+- Updated Mesa drivers for better AMD/Intel graphics
+- Improved Wayland compositor performance
+- Better power management defaults
+- Enhanced container support
+
+**Fedora 42 Gaming Improvements:**
+- Better Steam Deck compatibility mode
+- Enhanced Proton integration
+- Improved HDR support preparation
+
+### Laptop Power Management
+
+**Install Power Optimization Tools:**
+```bash
+sudo dnf install powertop tlp tlp-rdw
+sudo systemctl enable --now tlp
+```
+
+# Configure TLP for gaming/performance mode
+sudo nano /etc/tlp.conf
+# Set: TLP_DEFAULT_MODE=performance (when plugged in)
+
+### Advanced Memory Management
+
+**Configure Swap Behavior:**
+```bash
+# Reduce swappiness for better gaming performance
+echo 'vm.swappiness=10' | sudo tee -a /etc/sysctl.conf
+
+# Improve memory allocation for gaming
+echo 'vm.vfs_cache_pressure=50' | sudo tee -a /etc/sysctl.conf
+```
+
+**4. Container/Flatpak Gaming Section**
+
+
+### Container Gaming Optimization
+
+**Steam Flatpak Optimization:**
+```bash
+# Install Steam as Flatpak for better sandboxing
+flatpak install com.valvesoftware.Steam
+
+# Grant necessary permissions for gaming
+flatpak override --user --filesystem=~/.local/share/Steam com.valvesoftware.Steam
+```
+
+
 ### GNOME Optimizations
 
 If staying with GNOME:
@@ -368,801 +423,572 @@ gsettings set org.gnome.shell.overrides workspaces-only-on-primary false
 
 -----
 
-## 🎮 NVIDIA Graphics Optimization
+## 🎮 NVIDIA Graphics Optimization for Fedora 42 (Wayland)
 
-> **Comprehensive optimization guide for NVIDIA GPUs on Fedora 42**
+> **Comprehensive optimization guide for NVIDIA GPUs on Fedora 42 with Wayland display server**
 
 ### 📋 NVIDIA System Requirements
 
 **Supported GPUs:**
 
-- GTX 750/900/1000 series and newer (Maxwell, Pascal, Turing, Ampere, Ada Lovelace)
+- GTX 900/1000 series and newer (Maxwell, Pascal, Turing, Ampere, Ada Lovelace, Blackwell)
 - RTX 20/30/40/50 series with full feature support
 - Quadro and Tesla cards (professional workloads)
 
 **Driver Compatibility:**
 
-- **Recommended:** NVIDIA 560+ drivers for best performance
-- **Minimum:** NVIDIA 470+ for basic functionality
+- **Recommended:** NVIDIA 575+ drivers for optimal Wayland support
+- **Minimum:** NVIDIA 570+ for stable Wayland functionality
+- **Note:** NVIDIA driver stack seeing much better Wayland support with its latest drivers
 
 -----
 
-### 🔧 NVIDIA Driver Installation
+### 🔧 NVIDIA Driver Installation (Fedora 42 Wayland)
 
-#### Method 1: RPM Fusion (Recommended)
+#### Method 1: RPM Fusion (Strongly Recommended)
+
+RPM Fusion remains the most reliable method for NVIDIA drivers on Fedora 42. This approach ensures proper integration with the Wayland display server and system updates.
 
 ```bash
-# Install NVIDIA drivers from RPM Fusion
+# Enable RPM Fusion repositories (if not already enabled)
+sudo dnf install https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm
+sudo dnf install https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
+
+# Update system packages
+sudo dnf update
+
+# Install NVIDIA drivers with Wayland support
 sudo dnf install akmod-nvidia xorg-x11-drv-nvidia-cuda
 
-# For 32-bit compatibility (Steam, Wine)
+# Install 32-bit compatibility libraries (essential for Steam, Wine, gaming)
 sudo dnf install xorg-x11-drv-nvidia-libs.i686
 
-# NVIDIA settings GUI
+# Install NVIDIA settings utility
 sudo dnf install nvidia-settings
-```
 
-#### Method 2: Official NVIDIA Repository
-
-```bash
-# Add NVIDIA repository
-sudo dnf config-manager --add-repo https://developer.download.nvidia.com/compute/cuda/repos/fedora39/x86_64/cuda-fedora39.repo
-
-# Install drivers
-sudo dnf install nvidia-driver nvidia-driver-libs nvidia-driver-cuda
+# Install additional tools for monitoring
+sudo dnf install nvidia-ml-py3
 ```
 
 #### Post-Installation Verification
 
+Understanding what each command tells us helps ensure your system is properly configured for optimal performance.
+
 ```bash
-# Check driver installation
+# Verify driver installation and check version
 nvidia-smi
+# This should show your GPU, driver version (570+), and current utilization
 
-# Verify CUDA support
+# Confirm CUDA support is available
 nvidia-smi -q | grep "CUDA Version"
+# Essential for AI workloads and some games using GPU compute
 
-# Test 3D acceleration
-glxinfo | grep "OpenGL renderer"
+# Verify Wayland is using NVIDIA GPU
+echo $XDG_SESSION_TYPE
+# Should output "wayland" on Fedora 42
+
+# Check that GBM backend is working
+nvidia-smi --query-gpu=name,driver_version --format=csv
+# Confirms proper driver loading
+```
+
+#### Enable Wayland for NVIDIA (Essential Step)
+
+Wayland requires specific configuration to work properly with NVIDIA drivers. This step ensures your desktop environment can utilize hardware acceleration.
+
+```bash
+# Enable DRM kernel mode setting (required for Wayland)
+echo 'options nvidia_drm modeset=1 fbdev=1' | sudo tee /etc/modprobe.d/nvidia-drm-modeset.conf
+
+# Enable early loading of NVIDIA modules
+echo -e 'nvidia\nnvidia_modeset\nnvidia_uvm\nnvidia_drm' | sudo tee /etc/modules-load.d/nvidia.conf
+
+# Rebuild initramfs to include changes
+sudo dracut --force
+
+# Reboot to apply kernel module changes
+sudo reboot
 ```
 
 -----
 
-### ⚡ NVIDIA Performance Optimizations
+### ⚡ NVIDIA Wayland Performance Optimizations
 
-#### 1. NVIDIA X Server Settings
+#### 1. Environment Variables for Wayland
 
-**Launch nvidia-settings and configure:**
-
-```bash
-nvidia-settings
-```
-
-**Key Settings to Adjust:**
-
-- **PowerMizer:** Set to “Prefer Maximum Performance”
-- **Sync to VBlank:** Disable for gaming (reduce input lag)
-- **Threaded Optimizations:** Enable
-- **Triple Buffering:** Enable (or Disable)
-
-**Save X configuration:**
-
-```bash
-sudo nvidia-settings --assign CurrentMetaMode="nvidia-auto-select +0+0 { ForceFullCompositionPipeline = On }"
-```
-
-#### 2. Environment Variables
+These environment variables optimize NVIDIA GPU behavior specifically for Wayland compositors. Unlike X11, Wayland handles many optimizations automatically, but these variables fine-tune performance.
 
 Add to `/etc/environment`:
 
 ```bash
-# NVIDIA optimizations
+# Core NVIDIA Wayland optimizations
+GBM_BACKEND=nvidia-drm
+__GLX_VENDOR_LIBRARY_NAME=nvidia
+
+# Enable threaded optimizations (improves CPU-GPU parallelism)
 __GL_THREADED_OPTIMIZATIONS=1
-__GL_SYNC_TO_VBLANK=0
-__GL_ALLOW_UNOFFICIAL_PROTOCOL=1
+
+# Shader compilation caching (reduces loading times)
 __GL_SHADER_DISK_CACHE=1
 __GL_SHADER_DISK_CACHE_PATH=/tmp/nvidia-shader-cache
 __GL_SHADER_DISK_CACHE_SIZE=1073741824
 
-# NVIDIA PRIME (ONLY for laptops with hybrid graphics)
-__NV_PRIME_RENDER_OFFLOAD=1
-__GLX_VENDOR_LIBRARY_NAME=nvidia
+# Disable VSync for gaming (reduces input lag)
+__GL_SYNC_TO_VBLANK=0
 
-# Additional gaming optimizations
+# Enable unofficial protocol extensions (compatibility)
+__GL_ALLOW_UNOFFICIAL_PROTOCOL=1
+
+# Wayland-specific optimizations
+WLR_DRM_NO_ATOMIC=1
+WLR_NO_HARDWARE_CURSORS=1
+
+# Gaming optimizations
 NVIDIA_DRIVER_CAPABILITIES=all
+PROTON_ENABLE_NVAPI=1
 ```
 
-#### 3. Xorg Configuration (only if using X11 based wm or whatever)
+#### 2. Kernel Module Parameters
 
-Create `/etc/X11/xorg.conf.d/20-nvidia.conf`:
+Modern NVIDIA drivers benefit from specific kernel parameters that improve Wayland compatibility and performance.
+
+Create `/etc/modprobe.d/nvidia-power-management.conf`:
 
 ```bash
-Section "Device"
-    Identifier "NVIDIA Card"
-    Driver "nvidia"
-    VendorName "NVIDIA Corporation"
-    Option "NoLogo" "true"
-    Option "UseEDID" "false"
-    Option "ConnectedMonitor" "DFP"
-    Option "CustomEDID" "DFP:/etc/X11/your_edid.bin"
-    Option "TripleBuffer" "true"
-    Option "RegistryDwords" "EnableBrightnessControl=1"
-    Option "MetaModes" "nvidia-auto-select +0+0 { ForceFullCompositionPipeline = On }"
-    Option "AllowIndirectGLXProtocol" "off"
-    Option "TripleBuffer" "on"
-EndSection
+# Enable modern power management features
+options nvidia NVreg_DynamicPowerManagement=0x02
 
-Section "Screen"
-    Identifier "NVIDIA Screen"
-    Device "NVIDIA Card"
-    Monitor "My Monitor"
-    DefaultDepth 24
-    Option "metamodes" "nvidia-auto-select +0+0 { ForceFullCompositionPipeline = On }"
-    Option "AllowIndirectGLXProtocol" "off"
-    Option "TripleBuffer" "on"
-EndSection
+# Enable Page Attribute Table (improves memory performance)
+options nvidia NVreg_UsePageAttributeTable=1
+
+# Enable ResizableBAR support (RTX 30/40/50 series)
+options nvidia NVreg_EnableResizableBar=1
+
+# Preserve video memory during suspend
+options nvidia NVreg_PreserveVideoMemoryAllocations=1
+
+# Enable stream memory operations (required for some workloads)
+options nvidia NVreg_EnableStreamMemOPs=1
+```
+
+#### 3. GNOME Wayland Specific Settings
+
+GNOME on Wayland requires particular attention to achieve optimal NVIDIA performance. These settings address common issues with the GNOME compositor.
+
+```bash
+# Enable NVIDIA acceleration for GNOME Wayland session
+gsettings set org.gnome.mutter experimental-features "['variable-refresh-rate']"
+
+# Configure GNOME for gaming performance
+gsettings set org.gnome.shell.extensions.dash-to-dock click-action 'cycle-windows'
+gsettings set org.gnome.desktop.interface enable-animations false
+
+# Set scaling factor for high-DPI displays (adjust as needed)
+gsettings set org.gnome.desktop.interface scaling-factor 1
+```
+
+#### 4. KDE Plasma Wayland Configuration
+
+KDE Plasma has excellent Wayland support and works particularly well with NVIDIA drivers when properly configured.
+
+```bash
+# Enable variable refresh rate support
+kwriteconfig5 --file kwinrc --group Compositing --key VariableRefreshRate true
+
+# Optimize compositor settings for gaming
+kwriteconfig5 --file kwinrc --group Compositing --key LatencyPolicy Low
+kwriteconfig5 --file kwinrc --group Compositing --key RenderTimeEstimator 1
+
+# Restart KWin to apply changes
+qdbus org.kde.KWin /KWin reconfigure
 ```
 
 -----
 
-### 🏎️ Gaming-Specific NVIDIA Tweaks
+### 🏎️ Gaming-Specific NVIDIA Optimizations
 
-#### 1. Steam Launch Options
+#### 1. Steam Launch Options for Wayland
+
+Steam gaming on Wayland requires specific launch parameters to ensure games use the NVIDIA GPU properly and achieve optimal performance.
 
 **For native Linux games:**
 
 ```bash
+# Basic optimization with GameMode
 gamemoderun __GL_THREADED_OPTIMIZATIONS=1 %command%
+
+# Enhanced performance for competitive gaming
+gamemoderun __GL_SYNC_TO_VBLANK=0 __GL_THREADED_OPTIMIZATIONS=1 %command%
 ```
 
 **For Proton/Wine games:**
 
 ```bash
-gamemoderun __GL_THREADED_OPTIMIZATIONS=1 DXVK_ASYNC=1 PROTON_USE_WINED3D=0 %command%
+# Standard Proton optimization
+gamemoderun __GL_THREADED_OPTIMIZATIONS=1 PROTON_ENABLE_NVAPI=1 %command%
+
+# Advanced optimization with DXVK async compilation
+gamemoderun __GL_THREADED_OPTIMIZATIONS=1 DXVK_ASYNC=1 PROTON_ENABLE_NVAPI=1 %command%
+
+# For games requiring maximum performance
+gamemoderun __GL_SYNC_TO_VBLANK=0 __GL_THREADED_OPTIMIZATIONS=1 DXVK_ASYNC=1 PROTON_ENABLE_NVAPI=1 %command%
 ```
 
-**For VR games:**
+#### 2. Lutris Gaming Optimization
+
+Lutris provides excellent integration with NVIDIA drivers on Wayland. Configure these settings for optimal gaming performance.
 
 ```bash
-__GL_THREADED_OPTIMIZATIONS=1 __GL_SYNC_TO_VBLANK=0 %command%
+# Install Lutris with NVIDIA support
+sudo dnf install lutris wine
+
+# Configure Lutris environment variables (in Lutris preferences)
+# Add these to System Options → Environment variables:
+__GL_THREADED_OPTIMIZATIONS=1
+__GL_SHADER_DISK_CACHE=1
+PROTON_ENABLE_NVAPI=1
+DXVK_HUD=fps,memory,gpuload
 ```
 
-#### 2. NVIDIA Profile Inspector Alternative
+#### 3. GameMode Integration
 
-Create custom game profiles using nvidia-settings:
-
-```bash
-# Create profile for specific game
-nvidia-settings --assign [gpu:0]/GPUPowerMizerMode=1
-nvidia-settings --assign [gpu:0]/GPUMemoryTransferRateOffset[3]=1000
-nvidia-settings --assign [gpu:0]/GPUGraphicsClockOffset[3]=100
-```
-
-#### 3. NVENC/NVDEC Optimization
-
-For streaming and recording:
+GameMode automatically optimizes system performance during gaming sessions, providing better resource allocation and reduced latency.
 
 ```bash
-# Install NVENC/NVDEC support
-sudo dnf install nvidia-driver-cuda-libs
+# Install GameMode
+sudo dnf install gamemode
 
-# OBS Studio with NVENC
-sudo dnf install obs-studio
+# Configure GameMode for NVIDIA optimization
+sudo tee /etc/gamemode.ini << 'EOF'
+[general]
+renice=10
+ioprio=1
 
-# FFmpeg with NVIDIA acceleration
-sudo dnf install ffmpeg --allowerasing
-```
+[gpu]
+apply_gpu_optimisations=accept-responsibility
+gpu_device=0
+amd_performance_level=high
 
------
-
-### 🔥 Advanced NVIDIA Tweaks
-
-#### 1. GPU Memory Clock Optimization
-
-```bash
-# Check current clocks
-nvidia-smi -q -d CLOCK
-
-# Enable persistence mode (for consistent performance)
-sudo nvidia-smi -pm 1
-
-# Set application clocks (!! adjust values for your SPECIFIC GPU)
-sudo nvidia-smi -ac 4004,1911
-```
-
-#### 2. Power Management Optimization
-
-```bash
-# Disable GPU power management (maximum performance)
-sudo nvidia-smi -pl 300  # !! Set to your GPU's maximum power limit
-
-# For laptops - hybrid graphics management
-sudo dnf install switcheroo-control
-```
-
-#### 3. NVIDIA Container Toolkit (for AI/ML)
-
-```bash
-# Add NVIDIA container repository
-curl -s -L https://nvidia.github.io/libnvidia-container/stable/rpm/nvidia-container-toolkit.repo | \
-  sudo tee /etc/yum.repos.d/nvidia-container-toolkit.repo
-
-# Install container toolkit
-sudo dnf install nvidia-container-toolkit
-
-# Configure Docker
-sudo nvidia-ctk runtime configure --runtime=docker
-sudo systemctl restart docker
-```
-
-#### 4. Overclocking Tools
-
-```bash
-# Install GreenWithEnvy (MSI Afterburner alternative)
-sudo dnf copr enable atim/gwe
-sudo dnf install gwe
-
-# Alternative: NVIDIA System Management Interface
-sudo dnf install nvidia-ml-py3
+[custom]
+start=nvidia-smi -pm 1 && nvidia-smi -pl 300
+end=nvidia-smi -pm 0 && nvidia-smi -ac -r
+EOF
 ```
 
 -----
 
-### 🐛 NVIDIA Troubleshooting
+### 🔥 Advanced NVIDIA Wayland Tweaks
 
-#### Common Issues and Solutions
+#### 1. Variable Refresh Rate (VRR) Support
 
-**1. Black Screen After Driver Installation:**
+Modern NVIDIA drivers support variable refresh rate on Wayland, providing smoother gaming experiences with compatible monitors.
 
 ```bash
-# Boot to console (Ctrl+Alt+F2)
-sudo systemctl isolate multi-user.target
+# Enable VRR in GNOME (requires GNOME 45+)
+gsettings set org.gnome.mutter experimental-features "['variable-refresh-rate']"
 
-# Rebuild initramfs
-sudo dracut --force
+# For KDE Plasma, enable in system settings or via command:
+kwriteconfig5 --file kwinrc --group Compositing --key VariableRefreshRate true
 
-# Regenerate grub config
-sudo grub2-mkconfig -o /boot/grub2/grub.cfg
-
-# Reboot
-sudo systemctl reboot
+# Verify VRR is working
+sudo dnf install drm_info
+drm_info | grep -i vrr
 ```
 
-**2. Screen Tearing Issues:**
+#### 2. HDR Support (Experimental)
+
+High Dynamic Range support is gradually improving on Wayland with NVIDIA drivers. These settings enable experimental HDR functionality.
 
 ```bash
-# Force full composition pipeline
-nvidia-settings --assign CurrentMetaMode="nvidia-auto-select +0+0 { ForceFullCompositionPipeline = On }"
+# Enable HDR support (requires compatible display and recent drivers)
+echo 'options nvidia NVreg_EnableHDR=1' | sudo tee /etc/modprobe.d/nvidia-hdr.conf
 
-# Alternative: Use compositor
-sudo dnf install picom
+# GNOME HDR support (experimental, GNOME 46+)
+gsettings set org.gnome.mutter experimental-features "['variable-refresh-rate','hdr']"
 ```
 
-**3. Poor Gaming Performance:**
+#### 3. Performance Monitoring and Tuning
+
+Effective performance monitoring helps identify bottlenecks and verify that optimizations are working correctly.
 
 ```bash
-# Check GPU utilization
-nvidia-smi dmon
+# Install monitoring tools
+sudo dnf install nvtop mangohud goverlay
 
-# Verify GPU is being used
-__NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia glxinfo | grep "OpenGL renderer"
-
-# Check for throttling
-nvidia-smi -q -d TEMPERATURE,POWER,CLOCK
-```
-
-**4. Driver Update Issues:**
-
-```bash
-# Clean reinstall drivers
-sudo dnf remove '*nvidia*' --skip-broken
-sudo dnf autoremove
-sudo dnf install akmod-nvidia xorg-x11-drv-nvidia-cuda
-
-# Rebuild kernel modules
-sudo akmods --force
-```
-
-#### 5. Multiple Monitor Setup
-
-```bash
-# Configure multiple displays
-nvidia-settings --assign CurrentMetaMode="DP-2: nvidia-auto-select +1920+0, HDMI-A-1: nvidia-auto-select +0+0"
-
-# Save configuration
-sudo nvidia-settings --load-config-only
-```
-
------
-
-### 📊 NVIDIA Performance Monitoring
-
-#### Real-time Monitoring Commands
-
-```bash
-# GPU utilization and memory usage
-watch -n 1 nvidia-smi
-
-# Detailed GPU statistics
+# Create monitoring script for gaming sessions
+sudo tee /usr/local/bin/nvidia-gaming-monitor.sh << 'EOF'
+#!/bin/bash
+echo "=== NVIDIA Gaming Performance Monitor ==="
+echo "GPU: $(nvidia-smi --query-gpu=name --format=csv,noheader)"
+echo "Driver: $(nvidia-smi --query-gpu=driver_version --format=csv,noheader)"
+echo "=== Real-time Stats ==="
 nvidia-smi dmon -s pucvmet
+EOF
 
-# GPU temperature monitoring
-watch -n 1 'nvidia-smi --query-gpu=temperature.gpu --format=csv,noheader,nounits'
-
-# Power consumption monitoring
-watch -n 1 'nvidia-smi --query-gpu=power.draw --format=csv,noheader,nounits'
-```
-
-#### GUI Monitoring Tools
-
-```bash
-# Install GPU monitoring tools
-sudo dnf install nvtop
-
-# Advanced system monitoring
-sudo dnf install mangohud goverlay
-
-# Usage in games
-mangohud %command%  # Add to Steam launch options
+sudo chmod +x /usr/local/bin/nvidia-gaming-monitor.sh
 ```
 
 -----
 
-### 🔧 NVIDIA Developer Tools
+### 🛡️ Power Management and Thermal Optimization
 
-#### CUDA Development
+#### 1. Advanced Power Management
+
+Proper power management ensures consistent performance while preventing unnecessary power consumption during idle periods.
 
 ```bash
-# Install CUDA toolkit
-sudo dnf install cuda-toolkit cuda-devel
+# Configure advanced power management
+echo 'options nvidia NVreg_DynamicPowerManagement=0x02' | sudo tee -a /etc/modprobe.d/nvidia-power.conf
 
-# Add CUDA to PATH
-echo 'export PATH=/usr/local/cuda/bin:$PATH' >> ~/.bashrc
-echo 'export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH' >> ~/.bashrc
-
-# Verify CUDA installation
-nvcc --version
+# Enable runtime power management for laptops
+sudo tee /etc/udev/rules.d/80-nvidia-pm.rules << 'EOF'
+# Enable runtime PM for NVIDIA VGA/3D controller devices
+SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x030000", TEST=="power/control", ATTR{power/control}="auto"
+SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x030200", TEST=="power/control", ATTR{power/control}="auto"
+EOF
 ```
 
-#### Vulkan Support
+#### 2. Thermal Management
+
+Effective thermal management prevents throttling and maintains optimal performance during extended gaming sessions.
 
 ```bash
-# Install Vulkan support
-sudo dnf install vulkan-loader vulkan-tools mesa-vulkan-drivers
+# Install thermal monitoring tools
+sudo dnf install lm_sensors
 
-# For NVIDIA Vulkan
-sudo dnf install nvidia-driver-vulkan
+# Configure sensor detection
+sudo sensors-detect --auto
 
-# Test Vulkan
-vulkaninfo | grep "GPU id"
-vkcube  # Simple Vulkan demo
-```
-
------
-
-### 🎯 NVIDIA-Specific Gaming Optimizations
-
-#### 1. DLSS and Ray Tracing
-
-**Enable DLSS support:**
-
-```bash
-# Ensure latest drivers (RTX 20/30/40/50 series)
-nvidia-smi --query-gpu=driver_version --format=csv,noheader
-
-# Verify DLSS support in games
-# Check game settings for DLSS options (may still not work, idk, check that, it actually depends from system to system)
-```
-
-#### 2. NVIDIA Reflex (Low Latency)
-
-Add to game launch options:
-
-```bash
-__GL_SYNC_TO_VBLANK=0 NVIDIA_REFLEX=1 %command%
-```
-
-#### 3. GPU Scheduling Optimization
-
-```bash
-# Enable GPU scheduling (Windows 10 equivalent)
-echo 'options nvidia NVreg_UsePageAttributeTable=1' | sudo tee /etc/modprobe.d/nvidia-pat.conf
-
-# Rebuild initramfs
-sudo dracut --force
-```
-
-#### 4. VRAM Optimization
-
-```bash
-# Monitor VRAM usage
-nvidia-smi --query-gpu=memory.used,memory.total --format=csv
-
-# Optimize VRAM allocation for gaming
-echo 'options nvidia NVreg_RegistryDwords="RMUseSwapGroup=1;RMEnableVidmemPreserveOnSuspend=1"' | \
-  sudo tee /etc/modprobe.d/nvidia-vram.conf
-```
-
------
-
-### 🌡️ NVIDIA Thermal Management
-
-#### Fan Curve Configuration
-
-```bash
-# Enable manual fan control
-nvidia-settings -a [gpu:0]/GPUFanControlState=1
-
-# Set custom fan curve (adjust percentages as needed)
-nvidia-settings -a [fan:0]/GPUTargetFanSpeed=50
-
-# Create automated thermal script
+# Create thermal monitoring script
 sudo tee /usr/local/bin/nvidia-thermal.sh << 'EOF'
 #!/bin/bash
 TEMP=$(nvidia-smi --query-gpu=temperature.gpu --format=csv,noheader,nounits)
-if [ $TEMP -gt 75 ]; then
-    nvidia-settings -a [fan:0]/GPUTargetFanSpeed=80
-elif [ $TEMP -gt 65 ]; then
-    nvidia-settings -a [fan:0]/GPUTargetFanSpeed=60
-else
-    nvidia-settings -a [fan:0]/GPUTargetFanSpeed=40
+POWER=$(nvidia-smi --query-gpu=power.draw --format=csv,noheader,nounits)
+
+echo "GPU Temperature: ${TEMP}°C"
+echo "Power Draw: ${POWER}W"
+
+# Alert if temperature is high
+if [ $TEMP -gt 83 ]; then
+    echo "WARNING: GPU temperature is high!"
+    notify-send "GPU Temperature Warning" "GPU is running at ${TEMP}°C"
 fi
 EOF
 
 sudo chmod +x /usr/local/bin/nvidia-thermal.sh
 ```
 
-#### Thermal Monitoring
+-----
+
+### 🐛 NVIDIA Wayland Troubleshooting
+
+#### Common Issues and Modern Solutions
+
+Understanding how to diagnose and resolve issues ensures optimal performance and system stability.
+
+**1. Wayland Session Not Starting with NVIDIA:**
+
+This is the most common issue when transitioning from X11 to Wayland with NVIDIA drivers.
 
 ```bash
-# Install thermal monitoring
-sudo dnf install lm_sensors
+# Verify kernel module parameters are correct
+cat /etc/modprobe.d/nvidia-drm-modeset.conf
+# Should contain: options nvidia_drm modeset=1 fbdev=1
 
-# Configure sensors
-sudo sensors-detect
+# Check if DRM modeset is enabled
+cat /sys/module/nvidia_drm/parameters/modeset
+# Should output: Y
 
-# Monitor all temperatures
-watch sensors
+# Rebuild initramfs and reboot if necessary
+sudo dracut --force
+sudo reboot
+
+# Verify Wayland session after reboot
+echo $XDG_SESSION_TYPE
+# Should output: wayland
+```
+
+**2. Poor Gaming Performance Despite Good Hardware:**
+
+Performance issues often stem from incorrect GPU usage or power management settings.
+
+```bash
+# Verify GPU is being utilized
+nvidia-smi dmon -s pucvmet -c 10
+
+# Check for power limiting
+nvidia-smi --query-gpu=power.limit,power.draw --format=csv
+# Power draw should approach power limit during gaming
+
+# Monitor GPU clocks during gaming
+watch -n 1 'nvidia-smi --query-gpu=clocks.gr,clocks.mem --format=csv'
+# Clocks should reach maximum values during gaming
+```
+
+**3. Screen Tearing or Stuttering:**
+
+Modern Wayland compositors handle tearing better than X11, but some configuration may be needed.
+
+```bash
+# For GNOME, ensure VRR is enabled
+gsettings get org.gnome.mutter experimental-features
+# Should include 'variable-refresh-rate'
+
+# For games, disable VSync in-game and use compositor VSync
+# Add to Steam launch options:
+__GL_SYNC_TO_VBLANK=0 %command%
+```
+
+**4. High Idle Power Consumption:**
+
+Preventing unnecessary power draw during idle periods improves battery life and reduces heat.
+
+```bash
+# Enable runtime power management
+echo 'auto' | sudo tee /sys/bus/pci/devices/0000:*/power/control
+
+# Verify power management is working
+cat /sys/bus/pci/devices/0000:*/power/runtime_status
+# Should show 'suspended' for idle GPU
+
+# Monitor idle power consumption
+nvidia-smi --query-gpu=power.draw --format=csv --loop=1
 ```
 
 -----
 
-### 🔋 NVIDIA Power Management
+### 🔧 NVIDIA Developer and AI Tools
 
-#### For Desktop Systems
+#### CUDA Development Environment
+
+Setting up CUDA properly ensures compatibility with AI frameworks and development tools.
 
 ```bash
-# Maximum performance mode
-sudo nvidia-smi -pm 1
-sudo nvidia-smi -pl 350  # Adjust to your GPU's max power limit
+# Install CUDA toolkit
+sudo dnf install cuda-toolkit cuda-devel cuda-runtime
 
-# Disable power management
-echo 'options nvidia NVreg_RegistryDwords="PerfLevelSrc=0x2222"' | \
-  sudo tee /etc/modprobe.d/nvidia-power.conf
+# Configure environment variables
+echo 'export PATH=/usr/local/cuda/bin:$PATH' >> ~/.bashrc
+echo 'export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH' >> ~/.bashrc
+echo 'export CUDA_HOME=/usr/local/cuda' >> ~/.bashrc
+
+# Reload environment
+source ~/.bashrc
+
+# Verify CUDA installation
+nvcc --version
+nvidia-smi --query-gpu=compute_cap --format=csv
 ```
 
-#### For Laptop Systems (Hybrid Graphics)
+#### Container Support for AI/ML Workloads
+
+Container support enables easy deployment of AI and machine learning applications.
 
 ```bash
-# Install NVIDIA Prime support
-sudo dnf install nvidia-prime
+# Install NVIDIA Container Toolkit
+curl -fsSL https://nvidia.github.io/libnvidia-container/stable/rpm/nvidia-container-toolkit.repo | \
+  sudo tee /etc/yum.repos.d/nvidia-container-toolkit.repo
 
-# Check available GPUs
-prime-select query
-
-# Switch to NVIDIA GPU
-sudo prime-select nvidia
-
-# Switch back to integrated GPU (battery saving)
-sudo prime-select intel
-
-# On-demand GPU switching
-sudo dnf install envycontrol
-sudo envycontrol -s hybrid
-```
-
-#### NVIDIA Prime Render Offload
-
-For per-application GPU selection:
-
-```bash
-# Use NVIDIA GPU for specific application
-__NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia your_application
-
-# Gaming example
-__NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia steam
-
-# Add to .bashrc for convenience
-echo 'alias nvidia-run="__NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia"' >> ~/.bashrc
-```
-
------
-
-### 🎨 NVIDIA Display Optimizations
-
-#### High Refresh Rate Configuration (works only on X11 wm / de i believe)
-
-```bash
-# Set custom refresh rate
-xrandr --output DP-2 --mode 1920x1080 --rate 144
-
-# Make persistent in X11 startup
-echo 'xrandr --output DP-2 --mode 1920x1080 --rate 144' >> ~/.xprofile
-```
-
-#### G-SYNC/FreeSync Setup
-
-```bash
-# Enable Variable Refresh Rate (VRR)
-nvidia-settings --assign CurrentMetaMode="DP-2: 1920x1080_144 +0+0 {AllowGSYNC=On}"
-
-# For FreeSync monitors
-nvidia-settings --assign CurrentMetaMode="DP-2: 1920x1080_144 +0+0 {AllowGSYNCCompatible=On}"
-```
-
-#### Color Management
-
-```bash
-# Install color management tools
-sudo dnf install argyllcms DisplayCAL
-
-# Basic color calibration
-nvidia-settings --assign [DPY:DP-2]/DigitalVibrance=20
-nvidia-settings --assign [DPY:DP-2]/Contrast=1.1
-```
-
------
-
-### 🎯 NVIDIA Gaming Enhancements
-
-#### 1. NVIDIA Game Ready Drivers
-
-```bash
-# Check for latest Game Ready drivers
-nvidia-detector
-
-# Update to latest drivers
-sudo dnf update '*nvidia*'
-
-# Verify driver version
-cat /proc/driver/nvidia/version
-```
-
-#### 2. NVIDIA DLSS Configuration
-
-**System Requirements for DLSS:**
-
-- RTX 20/30/40/50 series GPU
-- Vulkan or DirectX 12 capable games
-- Latest NVIDIA drivers (560+)
-
-**Verification:**
-
-```bash
-# Check DLSS support
-vulkaninfo | grep -i dlss
-nvidia-smi --query-gpu=name --format=csv | grep -E "(RTX|Tesla)"
-```
-
-#### 3. Ray Tracing Optimization
-
-```bash
-# Enable RT cores utilization
-echo 'options nvidia NVreg_EnableStreamMemOPs=1' | \
-  sudo tee /etc/modprobe.d/nvidia-rt.conf
-
-# Verify RT support
-vulkaninfo | grep -i "ray.*trac"
-```
-
-#### 4. NVIDIA Broadcast (AI Features)
-
-```bash
-# Install required dependencies for AI features
-sudo dnf install python3-pip python3-devel
-
-# For OBS NVIDIA plugins
-sudo dnf copr enable johndoe31415/obs-backgroundremoval
-sudo dnf install obs-backgroundremoval
-```
-
------
-
-### 🛠️ NVIDIA Development Tools
-
-#### NVIDIA Nsight Tools
-
-```bash
-# Install NVIDIA development tools
-sudo dnf install cuda-nsight-compute cuda-nsight-systems
-
-# Graphics debugging
-sudo dnf install nvidia-visual-profiler
-```
-
-#### NVIDIA Container Support
-
-```bash
-# Install NVIDIA container runtime
 sudo dnf install nvidia-container-toolkit
 
-# Configure containerd
-sudo nvidia-ctk runtime configure --runtime=containerd
+# Configure Docker/Podman
+sudo nvidia-ctk runtime configure --runtime=docker
+sudo systemctl restart docker
 
-# Test with Docker
-sudo docker run --rm --gpus all nvidia/cuda:11.8-base nvidia-smi
+# Test container support
+sudo docker run --rm --gpus all nvidia/cuda:12.3-runtime-ubuntu20.04 nvidia-smi
 ```
 
 -----
 
-### 📈 NVIDIA Performance Benchmarking
+### 📊 Performance Monitoring and Benchmarking
 
-#### Benchmark Tools Installation
+#### Comprehensive Monitoring Setup
 
-```bash
-# Install benchmark utilities
-sudo dnf install mesa-demos glmark2
-
-# NVIDIA-specific benchmarks
-sudo dnf copr enable dawid/unigine
-sudo dnf install unigine-heaven unigine-valley
-
-# Gaming benchmarks
-sudo dnf install steam  # Access to Steam benchmarks
-```
-
-#### Performance Testing Commands
+Effective monitoring helps optimize performance and identify potential issues before they impact gaming or work performance.
 
 ```bash
-# OpenGL performance test
-glxgears -info
+# Install comprehensive monitoring suite
+sudo dnf install nvtop btop mangohud goverlay
 
-# Vulkan performance test
-vkmark
-
-# GPU memory bandwidth test
-cuda-memcheck deviceQuery
-
-# Comprehensive GPU test
-nvidia-smi --query-gpu=gpu_name,driver_version,memory.total,memory.used,utilization.gpu --format=csv --loop=1
-```
-
------
-
-### 🔍 NVIDIA System Monitoring
-
-#### Custom Monitoring Script
-
-```bash
-# Create NVIDIA monitoring script
-sudo tee /usr/local/bin/nvidia-monitor.sh << 'EOF'
+# Create performance monitoring script
+sudo tee /usr/local/bin/nvidia-perf-monitor.sh << 'EOF'
 #!/bin/bash
+clear
+echo "=== NVIDIA Performance Monitor ==="
+echo "System: $(hostnamectl --static) | $(date)"
+echo "Driver: $(nvidia-smi --query-gpu=driver_version --format=csv,noheader)"
+echo "GPU: $(nvidia-smi --query-gpu=name --format=csv,noheader)"
+echo ""
 
-echo "=== NVIDIA GPU Status ==="
-nvidia-smi --query-gpu=name,temperature.gpu,utilization.gpu,memory.used,memory.total,power.draw --format=csv
+# GPU utilization and memory
+nvidia-smi --query-gpu=utilization.gpu,memory.used,memory.total,temperature.gpu,power.draw,clocks.gr,clocks.mem --format=csv
 
-echo -e "\n=== Driver Information ==="
-cat /proc/driver/nvidia/version
-
-echo -e "\n=== Active Processes ==="
+echo ""
+echo "=== Active GPU Processes ==="
 nvidia-smi pmon -c 1
 
-echo -e "\n=== Clock Speeds ==="
-nvidia-smi --query-gpu=clocks.gr,clocks.mem --format=csv
+echo ""
+echo "Press Ctrl+C to exit continuous monitoring..."
+watch -n 2 nvidia-smi
 EOF
 
-sudo chmod +x /usr/local/bin/nvidia-monitor.sh
-
-# Run monitoring
-nvidia-monitor.sh
+sudo chmod +x /usr/local/bin/nvidia-perf-monitor.sh
 ```
 
-#### Real-time Dashboard
+#### Gaming Performance Overlay
+
+MangoHud provides real-time performance metrics during gaming sessions.
 
 ```bash
-# Install htop-like GPU monitor
-sudo dnf install nvtop
+# Configure MangoHud for optimal display
+mkdir -p ~/.config/MangoHud
 
-# Run real-time GPU monitoring
-nvtop
+cat > ~/.config/MangoHud/MangoHud.conf << 'EOF'
+# GPU and CPU information
+gpu_stats
+cpu_stats
+gpu_temp
+cpu_temp
+
+# Frame rate and timing
+fps
+frametime
+frame_timing
+
+# Memory usage
+vram
+ram
+
+# Position and appearance
+position=top-left
+font_size=22
+alpha=0.8
+
+# Limit logging to prevent performance impact
+log_duration=60
+EOF
 ```
 
 -----
 
-### 🚨 NVIDIA Troubleshooting Guide
+### 📚 Additional Resources
 
-#### Driver Issues
+**Official NVIDIA Documentation:**
+- [NVIDIA Linux Driver Installation Guide](https://docs.nvidia.com/datacenter/tesla/driver-installation-guide/index.html)
+- [CUDA Installation Guide for Linux](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/)
 
-**1. Nouveau Driver Conflicts:**
+**Fedora-Specific Resources:**
+- [RPM Fusion NVIDIA Guide](https://rpmfusion.org/Howto/NVIDIA)
+- [Fedora 42 Release Notes](https://fedoraproject.org/wiki/Releases/42/ChangeSet)
 
-```bash
-# Blacklist nouveau driver
-echo 'blacklist nouveau' | sudo tee /etc/modprobe.d/blacklist-nouveau.conf
-
-# Regenerate initramfs
-sudo dracut --force
-
-# Reboot required
-sudo reboot
-```
-
-**2. Kernel Module Issues:**
-
-```bash
-# Check if NVIDIA modules are loaded
-lsmod | grep nvidia
-
-# Manually load NVIDIA modules
-sudo modprobe nvidia
-sudo modprobe nvidia_drm
-sudo modprobe nvidia_modeset
-
-# Make modules load at boot
-echo -e "nvidia\nnvidia_drm\nnvidia_modeset" | sudo tee /etc/modules-load.d/nvidia.conf
-```
-
-**3. X11 Server Issues:**
-
-```bash
-# Generate new xorg.conf
-sudo nvidia-xconfig
-
-# Backup current config
-sudo cp /etc/X11/xorg.conf /etc/X11/xorg.conf.backup
-
-# Reset to default
-sudo rm /etc/X11/xorg.conf
-sudo systemctl restart gdm
-```
-
-#### Performance Issues
-
-**1. Low FPS Despite Good Hardware:**
-
-```bash
-# Check GPU is being used
-nvidia-smi dmon -s pucvmet -c 1
-
-# Verify no power limiting
-nvidia-smi --query-gpu=power.limit,power.draw --format=csv
-
-# Check for thermal throttling
-nvidia-smi --query-gpu=temperature.gpu,clocks.gr,clocks.mem --format=csv
-```
-
-**2. Stuttering in Games:**
-
-```bash
-# Disable compositing in games
-__GL_SYNC_TO_VBLANK=0 your_game
-
-# Use dedicated GPU cores
-nvidia-settings --assign [gpu:0]/GPUPowerMizerMode=1
-```
+**Wayland and Gaming:**
+- [Gaming on Linux with NVIDIA](https://www.gamingonlinux.com/)
+- [MangoHud Documentation](https://github.com/flightlessmango/MangoHud)
 
 -----
 
-### 📚 NVIDIA Resources & Links
-
-**Official Documentation:**
-
-- [NVIDIA Linux Driver Installation](https://docs.nvidia.com/datacenter/tesla/tesla-installation-notes/index.html)
-- [CUDA Installation Guide](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/)
-- [NVIDIA Developer Zone](https://developer.nvidia.com/)
-
-**Community Resources:**
-
-- [NVIDIA Forum](https://forums.developer.nvidia.com/)
-- [Arch Wiki NVIDIA](https://wiki.archlinux.org/title/NVIDIA) (applicable to Fedora)
-- [NVIDIA on Fedora Wiki](https://rpmfusion.org/Howto/NVIDIA)
-
-**Performance Communities:**
-
-- [r/nvidia](https://www.reddit.com/r/nvidia/)
-- [NVIDIA GeForce Forum](https://www.nvidia.com/en-us/geforce/forums/)
-
------
-
-*💡 **Pro Tip:** Always test changes incrementally. Apply one optimization at a time and verify stability before proceeding to the next step.*
+*💡 **Pro Tip:** Wayland offers hardware acceleration and generally better performance than traditional X11, making it the optimal choice for modern NVIDIA gaming setups on Fedora 42. Always verify changes incrementally and monitor performance to ensure optimal configuration.*
 
 ## 🔍 Monitoring & Verification
 
@@ -1486,6 +1312,7 @@ This guide modifies system settings that may affect stability and security. Alwa
 - **v1.0** - Initial comprehensive guide
 - **v1.1** - Added troubleshooting section and Russian translation
 - **v1.2** - Enhanced with monitoring tools and maintenance scripts
+- **v1.3** - Added NVIDIA drivers and performance guide and more
 
 -----
 
