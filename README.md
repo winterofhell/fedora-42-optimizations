@@ -522,9 +522,6 @@ echo "3" | sudo tee /sys/class/drm/card*/device/pp_dpm_mclk
 
 ## 🎮 NVIDIA Graphics Optimization for Fedora 42 (Wayland)
 
-<details>
-<summary>NVIDIA optimization, drivers installation, tools and more</summary>
-
 > **Comprehensive optimization guide for NVIDIA GPUs on Fedora 42 with Wayland display server**
 
 ### 📋 NVIDIA System Requirements
