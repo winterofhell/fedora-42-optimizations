@@ -2,14 +2,23 @@
 
 > **Complete guide for optimizing Fedora 42 for gaming and maximum performance | by winterofhell**
 
+## 🧭 Quick Navigation
+
+| Setup & Kernel                                                              | System & Gaming                                                            | Resources                                                                 |
+| --------------------------------------------------------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| [**System Information**](#-system-information)                              | [**Advanced System Tweaks**](#-advanced-system-tweaks)                     | [**Monitoring & Verification**](#-monitoring--verification)               |
+| [**Initial Setup & Preparation**](#-initial-setup--preparation)             | [**Gaming Optimizations**](#-gaming-optimizations)                         | [**Troubleshooting**](#-troubleshooting)                                  |
+| [**Kernel Optimization**](#-kernel-optimization)                            | [**Maintenance & Cleanup**](#-maintenance--cleanup)                        | [**Full Russian Translation**](#-русская-версия--russian-translation)     |
+| [**GRUB Kernel Parameters**](#️-grub-kernel-parameters)                       | [**Graphics Driver Optimization**](#️-graphics-driver-optimization)          |                                                                           |
+
 ## 📋 System Information
 
 **Testing Environment:**
 
-- **Period:** October 14, 2024 - August 17, 2025
-- **Distribution:** Fedora 42 (tested on Minimal ISO + Sway WM | Fedora GNOME Edition | KDE Edition)
-- **Additional Testing:** GNOME DE on NVIDIA system and AMD gpu System
-- **This may also work on any other distro, but i cannot guarantee that all these tweaks will work on any distro / or your system. It is always necessary to test everything. :)**
+- **Period:** October 14, 2024 - September 04, 2025
+- **Distribution:** Fedora 42 (tested on Minimal ISO + Sway WM | Fedora Desktop GNOME Edition | KDE Edition)
+- **Additional Testing:** NVIDIA and AMD gpu systems
+- **This may also work on any other distro, but i cannot guarantee that all these tweaks will be good on other distro / your system. It is always necessary to test everything. Btw 80% of tweaks works on Arch and NixOS :)**
 
 **Hardware Configurations(tested on):**
 
@@ -179,6 +188,7 @@ GRUB_CMDLINE_LINUX="quiet lpj=XXXXXXX mitigations=off elevator=mq-deadline nowat
 
 ```bash
 sudo dmesg | grep -o "lpj=[0-9]*"
+# Then replace XXXXXXX in GRUB_CMDLINE_LINUX with the value shown in the output
 ```
 
 ### Update GRUB Configuration
@@ -403,10 +413,10 @@ sudo nano /etc/tlp.conf
 
 **Configure Swap Behavior:**
 ```bash
-# Reduce swappiness for better gaming performance
+# Reduce swappiness for better performance
 echo 'vm.swappiness=10' | sudo tee -a /etc/sysctl.conf
 
-# Improve memory allocation for gaming
+# Improve memory allocation for gaming, etc.
 echo 'vm.vfs_cache_pressure=50' | sudo tee -a /etc/sysctl.conf
 ```
 
@@ -622,8 +632,24 @@ Add to `/etc/environment`:
 GBM_BACKEND=nvidia-drm
 __GLX_VENDOR_LIBRARY_NAME=nvidia
 
-# Enable threaded optimizations (improves CPU-GPU parallelism)
-__GL_THREADED_OPTIMIZATIONS=1
+# IMPORTANT: __GL_THREADED_OPTIMIZATIONS option can cause black screens on some RTX cards
+# Set this per-game instead (see troubleshooting section)
+# Or test and set it for environment, if you will have a black screen - log in throught tty, remove __GL_THREADED_OPTIMIZATION=1 from /etc/environment, save and reboot.
+# short tty guide
+#    - press Ctrl+Alt+F3 (or F2–F6) to switch to a TTY login screen.
+#    - log in with your username and password.
+
+# 2. edit /etc/environment and remove the problematic line:
+sudo nano /etc/environment
+
+#    - look for the line:
+#        __GL_THREADED_OPTIMIZATIONS=1
+#    - delete it, then save (Ctrl+O, Enter) and exit (Ctrl+X).
+
+# 3. reboot your system:
+# sudo reboot
+# Btw it's still recommended to set this option only per game
+# Thanks to @lemonadeforlife for pointing out this problem and solution
 
 # Shader compilation caching (reduces loading times)
 __GL_SHADER_DISK_CACHE=1
@@ -888,6 +914,18 @@ Understanding how to diagnose and resolve issues ensures optimal performance and
 This is the most common issue when transitioning from X11 to Wayland with NVIDIA drivers.
 
 ```bash
+### NVIDIA Black Screen on Boot
+
+**Problem:** System shows black screen after boot with NVIDIA drivers
+
+**Cause:** The `__GL_THREADED_OPTIMIZATIONS=1` environment variable in `/etc/environment` can cause display initialization issues on some RTX GPUs
+
+**Solution:**
+1. Boot into recovery mode (hold Shift during boot to access GRUB menu)
+2. Edit `/etc/environment` and remove or comment out:
+   ```bash
+   # __GL_THREADED_OPTIMIZATIONS=1
+
 # Verify kernel module parameters are correct
 cat /etc/modprobe.d/nvidia-drm-modeset.conf
 # Should contain: options nvidia_drm modeset=1 fbdev=1
@@ -1169,13 +1207,22 @@ Based on testing, users can expect:
     
 # 🚀 Руководство по оптимизации Fedora 42 для игр и производительности
 
+## 🧭 Быстрая навигация
+
+| Настройка и ядро                                                                  | Система и игры                                                                 | Ресурсы и другое                                                                       |
+| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
+| [**Информация о системе**](#-информация-о-системе)                                | [**Продвинутые настройки**](#-продвинутые-системные-настройки)                  | [**Мониторинг и проверка**](#-мониторинг-и-проверка)                                    |
+| [**Первоначальная настройка**](#-первоначальная-настройка-и-подготовка)            | [**Игровые оптимизации**](#-игровые-оптимизации)                               | [**Устранение неполадок**](#-устранение-неполадок)                                      |
+| [**Оптимизация ядра**](#-оптимизация-ядра)                                        | [**Обслуживание и очистка**](#-обслуживание-и-очистка)                         | [**Полная русская версия**](#-русская-версия--russian-translation)                      |
+| [**Параметры ядра GRUB**](#️-параметры-ядра-grub)                                    | [**Оптимизация драйверов**](#️-оптимизация-графических-драйверов)              |                                                                                        |
+
 > **Полное руководство по оптимизации Fedora 42 для игр и максимальной производительности | от winterofhell**
 
 ## 📋 Информация о системе
 
 **Среда тестирования:**
 
-- **Период проверки:** 14 октября 2024 - 17 августа 2025
+- **Период проверки:** 14 октября 2024 - 4 сентября 2025
 - **Дистрибутив:** Fedora 42 (Minimal ISO + Sway WM | Второй ПК: Fedora GNOME Edition | Fedora KDE Edition)
 - **Дополнительное тестирование:** GNOME DE на системах с NVIDIA и AMD
 - **Это может также работать на любом другом дистрибутиве, но я не могу гарантировать, что все эти настройки будут работать на любом дистрибутиве / или вашей системе. Всегда необходимо все тестировать. :)**
@@ -1789,8 +1836,23 @@ sudo reboot
 GBM_BACKEND=nvidia-drm
 __GLX_VENDOR_LIBRARY_NAME=nvidia
 
-# Включить потоковые оптимизации (улучшает параллелизм CPU-GPU)
-__GL_THREADED_OPTIMIZATIONS=1
+# ВАЖНО: __GL_THREADED_OPTIMIZATIONS может вызвать чёрный экран на некоторых RTX-картах
+# Рекомендуется выставлять эту опцию только для отдельных игр, а не глобально.
+# Если вы всё же добавили её в /etc/environment и получили чёрный экран — выполните следующие шаги.
+
+# 1. Переключитесь в TTY:
+#    - Нажмите Ctrl+Alt+F3 (можно F2–F6) — появится экран для входа.
+#    - Введите свой логин и пароль.
+
+# 2. Откройте файл /etc/environment для редактирования и удалите строку:
+sudo nano /etc/environment
+
+#    Найдите строку:
+#        __GL_THREADED_OPTIMIZATIONS=1
+#    Удалите её, затем сохраните (Ctrl+O, Enter) и выйдите (Ctrl+X).
+
+# 3. Перезагрузите систему:
+sudo reboot
 
 # Кэширование компиляции шейдеров (сокращает время загрузки)
 __GL_SHADER_DISK_CACHE=1
@@ -2367,10 +2429,11 @@ sudo rpm -Va
 - **v1.2** - Улучшено инструментами мониторинга и скриптами обслуживания
 - **v1.3** - Добавлены драйверы NVIDIA и руководство по производительности и многое другое
 - **v1.4** - Добавлен раздел настроек GPU AMD, исправлен некоторый текст и обновлен полный русский перевод
+- - **v1.5** - Добавлен раздел "Быстрая навигация" для удобства использования.
 
 -----
 
-*Последнее обновление: Август 2025*
+*Последнее обновление: Сентябрь 2025*
 </details>
 
 -----
@@ -2415,7 +2478,8 @@ This guide modifies system settings that may affect stability and security. Alwa
 - **v1.2** - Enhanced with monitoring tools and maintenance scripts
 - **v1.3** - Added NVIDIA drivers and performance guide and more
 - **v1.4** - Added AMD gpu tweaks section, corrected some text and updated full Russian translation
+- **v1.5** - Added a Quick Navigation section for better usability.
 
 -----
 
-*Last updated: August 2025*
+*Last updated: September 2025*
