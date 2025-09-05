@@ -632,20 +632,21 @@ Add to `/etc/environment`:
 GBM_BACKEND=nvidia-drm
 __GLX_VENDOR_LIBRARY_NAME=nvidia
 
-# IMPORTANT: __GL_THREADED_OPTIMIZATIONS option can cause black screens on some RTX cards
+# Enable threaded optimizations (improves CPU-GPU parallelism)
+__GL_THREADED_OPTIMIZATIONS=1
+# Warning: __GL_THREADED_OPTIMIZATIONS option can cause black screens on some RTX cards (See NVIDIA Wayland Troubleshooting)
 # Set this per-game instead (see troubleshooting section)
 # Or test and set it for environment, if you will have a black screen - log in throught tty, remove __GL_THREADED_OPTIMIZATION=1 from /etc/environment, save and reboot.
 # short tty guide
 #    - press Ctrl+Alt+F3 (or F2–F6) to switch to a TTY login screen.
 #    - log in with your username and password.
-
+#
 # 2. edit /etc/environment and remove the problematic line:
-sudo nano /etc/environment
-
+# sudo nano /etc/environment
 #    - look for the line:
 #        __GL_THREADED_OPTIMIZATIONS=1
 #    - delete it, then save (Ctrl+O, Enter) and exit (Ctrl+X).
-
+#
 # 3. reboot your system:
 # sudo reboot
 # Btw it's still recommended to set this option only per game
