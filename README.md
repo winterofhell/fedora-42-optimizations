@@ -8,14 +8,14 @@
 | --------------------------------------------------------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
 | [**System Information**](#-system-information)                              | [**Advanced System Tweaks**](#-advanced-system-tweaks)                     | [**Monitoring & Verification**](#-monitoring--verification)               |
 | [**Initial Setup & Preparation**](#-initial-setup--preparation)             | [**Gaming Optimizations**](#-gaming-optimizations)                         | [**Troubleshooting**](#-troubleshooting)                                  |
-| [**Kernel Optimization**](#-kernel-optimization)                            | [**Maintenance & Cleanup**](#-maintenance--cleanup)                        | [**Full Russian Translation**](#-русская-версия--russian-translation)     |
+| [**Kernel Optimization**](#-kernel-optimization)                            | [**Maintenance & Cleanup**](#-maintenance--cleanup)                        | [**Russian Translation**](#-русская-версия--russian-translation)     |
 | [**GRUB Kernel Parameters**](#️-grub-kernel-parameters)                       | [**Graphics Driver Optimization**](#️-graphics-driver-optimization)          |                                                                           |
 
 ## 📋 System Information
 
 **Testing Environment:**
 
-- **Period:** October 14, 2024 - September 04, 2025
+- **Period:** October 14, 2024 - September 07, 2025
 - **Distribution:** Fedora 42 (tested on Minimal ISO + Sway WM | Fedora Desktop GNOME Edition | KDE Edition)
 - **Additional Testing:** NVIDIA and AMD gpu systems
 - **This may also work on any other distro, but i cannot guarantee that all these tweaks will be good on other distro / your system. It is always necessary to test everything. Btw 80% of tweaks works on Arch and NixOS :)**
@@ -95,6 +95,7 @@ The CachyOS kernel provides significant performance improvements for gaming and 
 ```bash
 # Add CachyOS COPR repository
 sudo dnf copr enable bieszczaders/kernel-cachyos
+sudo dnf copr enable bieszczaders/kernel-cachyos-addons
 
 # Install CachyOS kernel
 sudo dnf install kernel-cachyos kernel-cachyos-devel
@@ -104,23 +105,6 @@ sudo dnf install kernel-cachyos-lts kernel-cachyos-lts-devel-matched
 ```
 
 📖 **More Info:** [CachyOS Kernel Installation](https://copr.fedorainfracloud.org/coprs/bieszczaders/kernel-cachyos/)
-
-### UKSMD Installation
-
-UKSMD (Userspace Kernel Same-page Merging Daemon) reduces memory usage and improves system responsiveness:
-
-```bash
-# Add UKSMD addon repository
-sudo dnf copr enable bieszczaders/kernel-cachyos-addons
-
-# Install UKSMD
-sudo dnf install uksmd
-
-# Enable and start UKSMD service
-sudo systemctl enable --now uksmd
-```
-
-📖 **More Info:** [UKSMD Addons](https://copr.fedorainfracloud.org/coprs/bieszczaders/kernel-cachyos-addons/)
 
 -----
 
@@ -145,6 +129,40 @@ sudo make install
 
 # Enable service
 sudo systemctl enable --now ananicy-cpp
+
+### Leveraging Automated CachyOS Tweaks
+
+# The CachyOS team provides powerful packages that can automate many of the advanced tweaks for us. This is a simpler and safer approach than manually setting dozens of system variables.
+
+# 1. Install CachyOS Optimization Packages
+sudo dnf install cachyos-settings cachyos-ksm-settings scx-scheds
+
+# 2. Advanced CPU Scheduler Optimization (SCX)
+# This is one of the most impactful tweaks for system responsiveness and gaming performance. We will replace the default Linux CPU scheduler with a specialized one from the `scx-scheds` package we installed earlier.
+# Note: This is an advanced tweak. While it provides significant gains, it changes a core component of the system !!
+
+# Step 1: Configure the Default Scheduler
+# We will set `bpfland` as our default scheduler, as it provides an excellent balance for gaming and desktop usage. Create the configuration file with this command:
+
+cat <<EOF | sudo tee /etc/scx_loader/config.toml
+# Set the bpfland scheduler as default and configure it for gaming mode.
+default_sched = "scx_bpfland"
+default_mode = "Gaming"
+ 
+[scheds.scx_bpfland]
+auto_mode = []
+gaming_mode = ["-m", "performance"]
+lowlatency_mode = ["-s", "5000", "-S", "500", "-l", "5000", "-m", "performance"]
+powersave_mode = ["-m", "powersave"]
+EOF
+
+# Step 2: Enable and Start the Scheduler Service
+sudo systemctl enable --now scx_loader
+
+# Step 3: Verify the Change
+dbus-send --system --print-reply --dest=org.scx.Loader /org/scx/Loader org.freedesktop.DBus.Properties.Get string:org.scx.Loader string:CurrentScheduler
+# the output should show string "scx_bpfland".
+
 ```
 
 ### Service Management
@@ -181,7 +199,7 @@ sudo nano /etc/default/grub
 Add these parameters to `GRUB_CMDLINE_LINUX`:
 
 ```bash
-GRUB_CMDLINE_LINUX="quiet lpj=XXXXXXX mitigations=off elevator=mq-deadline nowatchdog page_alloc.shuffle=1 pci=pcie_bus_perf intel_idle.max_cstate=1 processor.max_cstate=1 libahci.ignore_sss=1 noautogroup amd_pstate=active"
+GRUB_CMDLINE_LINUX="quiet lpj=XXXXXXX mitigations=off skew_tick=1 elevator=mq-deadline nowatchdog page_alloc.shuffle=1 pci=pcie_bus_perf intel_idle.max_cstate=1 processor.max_cstate=1 libahci.ignore_sss=1 noautogroup amd_pstate=active"
 ```
 
 **Get the LPJ value:**
@@ -629,9 +647,19 @@ Add to `/etc/environment`:
 
 ```bash
 # Core NVIDIA Wayland optimizations
+#
+#⚠️ Critical Warning for Modern NVIDIA GPUs (RTX 20-Series and Newer)
+#
+# Based on user feedback and testing, the following two env variables (`GBM_BACKEND` and `__GLX_VENDOR_LIBRARY_NAME`) can cause severe system-wide input lag, stuttering, and application unresponsiveness on NVIDIA RTX 20, 30, 40, and 50 series of gpus
+#
+# ! Recommendation for RTX 20-series and newer: DO NOT use these variables. Modern nvidia drivers and wayland compositors generally handle this configuration automatically. Enabling them manually can create conflicts
+# ! Recommendation for older gpus (GTX 10-Series and older): These variables can still be beneficial for ensuring wayland compatibility on older hardware. you can try them. any issue report with a specific gpu problems will be very valuable! :)
+#
+#
+# For older cards ONLY (GTX 10-Series and below), you might still need:
 GBM_BACKEND=nvidia-drm
 __GLX_VENDOR_LIBRARY_NAME=nvidia
-
+#
 # Enable threaded optimizations (improves CPU-GPU parallelism)
 __GL_THREADED_OPTIMIZATIONS=1
 # Warning: __GL_THREADED_OPTIMIZATIONS option can cause black screens on some RTX cards (See NVIDIA Wayland Troubleshooting)
@@ -652,7 +680,7 @@ __GL_THREADED_OPTIMIZATIONS=1
 # Btw it's still recommended to set this option only per game
 # Thanks to @lemonadeforlife for pointing out this problem and solution
 
-# Shader compilation caching (reduces loading times)
+# Shader compilation caching (reduces stutter in games)
 __GL_SHADER_DISK_CACHE=1
 __GL_SHADER_DISK_CACHE_PATH=/tmp/nvidia-shader-cache
 __GL_SHADER_DISK_CACHE_SIZE=1073741824
@@ -660,16 +688,20 @@ __GL_SHADER_DISK_CACHE_SIZE=1073741824
 # Disable VSync for gaming (reduces input lag)
 __GL_SYNC_TO_VBLANK=0
 
-# Enable unofficial protocol extensions (compatibility)
+# Enable unofficial protocol extensions for Wayland compatibility
 __GL_ALLOW_UNOFFICIAL_PROTOCOL=1
 
-# Wayland-specific optimizations
+# Gaming-specific optimizations
+# Enables NVAPI for features like DLSS in Proton, rtx gpu users test this please
+PROTON_ENABLE_NVAPI=1
+NVIDIA_DRIVER_CAPABILITIES=all
+
+# The following tweaks are not recommended globally. Use them only if you know you need them.
+
+# For wl-roots compositors ONLY (Sway, Hyprland)
+# These may help with graphical glitches but are not needed on GNOME/KDE.
 WLR_DRM_NO_ATOMIC=1
 WLR_NO_HARDWARE_CURSORS=1
-
-# Gaming optimizations
-NVIDIA_DRIVER_CAPABILITIES=all
-PROTON_ENABLE_NVAPI=1
 ```
 
 #### 2. Kernel Module Parameters
@@ -776,7 +808,7 @@ DXVK_HUD=fps,memory,gpuload
 
 #### 3. GameMode Integration
 
-GameMode automatically optimizes system performance during gaming sessions, providing better resource allocation and reduced latency.
+GameMode automatically applies system optimizations during gaming. While it works well out of the box, you can fine-tune its behavior.
 
 ```bash
 # Install GameMode
@@ -791,11 +823,6 @@ ioprio=1
 [gpu]
 apply_gpu_optimisations=accept-responsibility
 gpu_device=0
-amd_performance_level=high
-
-[custom]
-start=nvidia-smi -pm 1 && nvidia-smi -pl 300
-end=nvidia-smi -pm 0 && nvidia-smi -ac -r
 EOF
 ```
 
@@ -808,8 +835,9 @@ EOF
 Modern NVIDIA drivers support variable refresh rate on Wayland, providing smoother gaming experiences with compatible monitors.
 
 ```bash
-# Enable VRR in GNOME (requires GNOME 45+)
+# Enable VRR in GNOME
 gsettings set org.gnome.mutter experimental-features "['variable-refresh-rate']"
+# Or in Display settings (if supported)
 
 # For KDE Plasma, enable in system settings or via command:
 kwriteconfig5 --file kwinrc --group Compositing --key VariableRefreshRate true
@@ -1032,7 +1060,7 @@ sudo nvidia-ctk runtime configure --runtime=docker
 sudo systemctl restart docker
 
 # Test container support
-sudo docker run --rm --gpus all nvidia/cuda:12.3-runtime-ubuntu20.04 nvidia-smi
+sudo docker run --rm --gpus all nvidia/cuda:12.7-runtime-ubuntu25.04 nvidia-smi
 ```
 
 -----
@@ -1223,10 +1251,10 @@ Based on testing, users can expect:
 
 **Среда тестирования:**
 
-- **Период проверки:** 14 октября 2024 - 4 сентября 2025
+- **Период проверки:** 14 октября 2024 - 7 сентября 2025
 - **Дистрибутив:** Fedora 42 (Minimal ISO + Sway WM | Второй ПК: Fedora GNOME Edition | Fedora KDE Edition)
 - **Дополнительное тестирование:** GNOME DE на системах с NVIDIA и AMD
-- **Это может также работать на любом другом дистрибутиве, но я не могу гарантировать, что все эти настройки будут работать на любом дистрибутиве / или вашей системе. Всегда необходимо все тестировать. :)**
+- **Это может также работать на любом другом дистрибутиве, но я не могу гарантировать, что все эти настройки будут работать на вашей системе. Но 80% твиков работают на всех системах, включая Arch / NixOS :)**
 
 **Конфигурации оборудования (протестировано на):**
 
@@ -1749,7 +1777,7 @@ echo "3" | sudo tee /sys/class/drm/card*/device/pp_dpm_mclk
 
 **Совместимость драйверов:**
 
-- **Рекомендуется:** Драйверы NVIDIA 580+ для оптимальной поддержки Wayland
+- **Рекомендуется:** Драйверы NVIDIA 575+ для оптимальной поддержки Wayland
 - **Минимум:** NVIDIA 570+ для стабильной функциональности Wayland
 - **Примечание:** Стек драйверов NVIDIA демонстрирует намного лучшую поддержку Wayland с последними драйверами
 
@@ -1789,7 +1817,7 @@ sudo dnf install nvidia-ml-py3
 ```bash
 # Проверить установку драйвера и версию
 nvidia-smi
-# Это должно показать ваш GPU, версию драйвера (570+) и текущее использование
+# Это должно показать ваш GPU, версию драйвера (575+) и текущее использование
 
 # Подтвердить доступность поддержки CUDA
 nvidia-smi -q | grep "CUDA Version"
@@ -2430,7 +2458,7 @@ sudo rpm -Va
 - **v1.2** - Улучшено инструментами мониторинга и скриптами обслуживания
 - **v1.3** - Добавлены драйверы NVIDIA и руководство по производительности и многое другое
 - **v1.4** - Добавлен раздел настроек GPU AMD, исправлен некоторый текст и обновлен полный русский перевод
-- - **v1.5** - Добавлен раздел "Быстрая навигация" для удобства использования.
+- **v1.5** - Добавлен раздел "Быстрая навигация" для удобства использования.
 
 -----
 
@@ -2479,7 +2507,8 @@ This guide modifies system settings that may affect stability and security. Alwa
 - **v1.2** - Enhanced with monitoring tools and maintenance scripts
 - **v1.3** - Added NVIDIA drivers and performance guide and more
 - **v1.4** - Added AMD gpu tweaks section, corrected some text and updated full Russian translation
-- **v1.5** - Added a Quick Navigation section for better usability.
+- **v1.5** - Added a Quick Navigation section for better usability
+- **v1.6** - Changed from UKSMD to KSMD, more deeper cachyos kernel settings, etc
 
 -----
 
